@@ -13,7 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Upload, X } from "lucide-react"
+import Image from "next/image"
+import { useToast } from "@/components/ui/use-toast"
+import { UploadDropzone } from "@uploadthing/react"
+import { OurFileRouter } from "@/lib/uploadthing"
 
 const formSchema = z.object({
   title: z.string().min(5, {
@@ -38,12 +42,14 @@ const formSchema = z.object({
     message: "Duration is required.",
   }),
   isPublished: z.boolean().default(false),
+  imageUrl: z.string().optional(),
 })
 
 export default function NewCoursePage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,6 +62,7 @@ export default function NewCoursePage() {
       instructor: "",
       duration: "",
       isPublished: false,
+      imageUrl: undefined,
     },
   })
 
@@ -105,6 +112,77 @@ export default function NewCoursePage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course Image</FormLabel>
+                      <FormControl>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                            {field.value ? (
+                              <div className="relative h-40 w-40">
+                                <Image
+                                  src={field.value}
+                                  alt="Course preview"
+                                  fill
+                                  className="rounded-lg object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => form.setValue("imageUrl", "")}
+                                  className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-full">
+                                <div className="flex items-center justify-center w-full">
+                                  <UploadDropzone<OurFileRouter, "courseImage">
+                                    endpoint="courseImage"
+                                    onBeforeUploadBegin={(files) => {
+                                      console.log("Before upload:", files);
+                                      return files;
+                                    }}
+                                    onUploadBegin={(fileName) => {
+                                      console.log("Upload starting:", fileName);
+                                    }}
+                                    onClientUploadComplete={(res) => {
+                                      console.log("Upload completed:", res);
+                                      if (res?.[0]) {
+                                        form.setValue("imageUrl", res[0].url);
+                                        toast({
+                                          title: "Success",
+                                          description: "Image uploaded successfully",
+                                        });
+                                      }
+                                    }}
+                                    onUploadError={(err) => {
+                                      console.error("Upload error:", err);
+                                      toast({
+                                        title: "Error",
+                                        description: err.message,
+                                        variant: "destructive",
+                                      });
+                                    }}
+                                    className="ut-button:bg-primary ut-label:text-lg border-2 border-dashed border-gray-200 p-8 w-full min-h-[200px]"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Recommended size: 1280×720. Max size: 4MB
+                          </p>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="title"
