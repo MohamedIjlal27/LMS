@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AlertCircle } from "lucide-react"
 import Cookies from 'js-cookie'
+import { authApi } from "@/lib/api/auth"
 
 const formSchema = z.object({
   email: z.string().email({
@@ -24,24 +25,6 @@ const formSchema = z.object({
   }),
   rememberMe: z.boolean().optional(),
 })
-
-// Mock user database - in a real app, this would be in a database
-const users = [
-  {
-    id: 1,
-    name: "Admin User",
-    email: "admin@example.com",
-    password: "password",
-    role: "admin"
-  },
-  {
-    id: 2,
-    name: "Mohamed Ijlal",
-    email: "mohamedijlal27@outlook.com",
-    password: "Ijlal@123",
-    role: "student"
-  }
-]
 
 export default function LoginPage() {
   const router = useRouter()
@@ -62,37 +45,30 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Find user in our mock database
-      const user = users.find(u => u.email === values.email && u.password === values.password)
+      const { token, user } = await authApi.login({
+        email: values.email,
+        password: values.password,
+      })
+
+      // Set token cookie
+      Cookies.set('token', token, { 
+        expires: values.rememberMe ? 7 : 1,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      })
       
-      if (user) {
-        // Set token cookie with user info
-        Cookies.set('token', 'mock-token', { 
-          expires: values.rememberMe ? 7 : 1,
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict'
-        })
-        
-        // Store user info in localStorage for easy access
-        localStorage.setItem('user', JSON.stringify({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        }))
-        
-        // Redirect based on role
-        if (user.role === 'admin') {
-          router.push("/admin/dashboard")
-        } else {
-          router.push("/dashboard")
-        }
+      // Store user info in localStorage
+      localStorage.setItem('user', JSON.stringify(user))
+      
+      // Redirect based on role
+      if (user.role === 'admin') {
+        router.push("/admin/dashboard")
       } else {
-        setError("Invalid email or password. Please try again.")
+        router.push("/dashboard")
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
+      setError(error instanceof Error ? error.message : "An error occurred. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -177,11 +153,6 @@ export default function LoginPage() {
             <Link href="/register" className="font-medium text-primary hover:underline">
               Sign up
             </Link>
-          </div>
-          <div className="text-center text-xs text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Admin: admin@example.com / password</p>
-            <p>Student: mohamedijlal27@outlook.com / Ijlal@123</p>
           </div>
         </CardFooter>
       </Card>

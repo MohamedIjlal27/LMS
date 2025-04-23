@@ -12,11 +12,16 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle2, AlertCircle } from "lucide-react"
+import { authApi } from "@/lib/api/auth"
+import Cookies from 'js-cookie'
 
 const formSchema = z
   .object({
-    name: z.string().min(2, {
-      message: "Name must be at least 2 characters.",
+    firstName: z.string().min(2, {
+      message: "First name must be at least 2 characters.",
+    }),
+    lastName: z.string().min(2, {
+      message: "Last name must be at least 2 characters.",
     }),
     email: z.string().email({
       message: "Please enter a valid email address.",
@@ -39,7 +44,8 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -51,25 +57,41 @@ export default function RegisterPage() {
     setSubmitStatus(null)
 
     try {
-      // In a real implementation, this would be an API call to register the user
-      console.log("Registration values:", values)
+      const { token, user } = await authApi.register({
+        email: values.email,
+        password: values.password,
+        firstName: values.firstName,
+        lastName: values.lastName,
+      })
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Set token cookie
+      Cookies.set('token', token, { 
+        expires: 1,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      })
+      
+      // Store user info in localStorage
+      localStorage.setItem('user', JSON.stringify(user))
 
       setSubmitStatus({
         success: true,
-        message: "Registration successful! Redirecting to login...",
+        message: "Registration successful! Redirecting to dashboard...",
       })
 
-      // Redirect to login page after successful registration
+      // Redirect to dashboard after successful registration
       setTimeout(() => {
-        router.push("/login")
+        if (user.role === 'admin') {
+          router.push("/admin/dashboard")
+        } else {
+          router.push("/dashboard")
+        }
       }, 2000)
     } catch (error) {
       setSubmitStatus({
         success: false,
-        message: "Registration failed. Please try again.",
+        message: error instanceof Error ? error.message : "Registration failed. Please try again.",
       })
     } finally {
       setIsSubmitting(false)
@@ -102,12 +124,25 @@ export default function RegisterPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
