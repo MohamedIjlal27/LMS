@@ -1,11 +1,39 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Menu, User } from "lucide-react"
+import { Menu, User, LogOut } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Cookies from 'js-cookie'
 
 export function SiteHeader() {
-  // In a real implementation, we would check if the user is authenticated
-  const isAuthenticated = false
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userName, setUserName] = useState("")
+
+  useEffect(() => {
+    // Check if user is authenticated by looking for token in cookies
+    const token = Cookies.get('token')
+    setIsAuthenticated(!!token)
+    
+    // Get user info from localStorage if available
+    const userInfo = localStorage.getItem('user')
+    if (userInfo) {
+      const user = JSON.parse(userInfo)
+      setUserName(user.name)
+    }
+  }, [])
+
+  const handleLogout = () => {
+    // Remove the token cookie
+    Cookies.remove('token', { path: '/' })
+    // Clear user info from localStorage
+    localStorage.removeItem('user')
+    // Redirect to login page
+    router.push('/login')
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -37,14 +65,18 @@ export function SiteHeader() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem className="font-medium">
+                    {userName || "User"}
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/profile">Profile</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/api/auth/logout">Logout</Link>
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -75,6 +107,26 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/contact">Contact</Link>
                 </DropdownMenuItem>
+                {isAuthenticated ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard">Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/login">Login</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/register">Register</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

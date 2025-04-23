@@ -25,6 +25,24 @@ const formSchema = z.object({
   rememberMe: z.boolean().optional(),
 })
 
+// Mock user database - in a real app, this would be in a database
+const users = [
+  {
+    id: 1,
+    name: "Admin User",
+    email: "admin@example.com",
+    password: "password",
+    role: "admin"
+  },
+  {
+    id: 2,
+    name: "Mohamed Ijlal",
+    email: "mohamedijlal27@outlook.com",
+    password: "Ijlal@123",
+    role: "student"
+  }
+]
+
 export default function LoginPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,17 +62,37 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Check if it's an admin login
-      if (values.email === "admin@example.com" && values.password === "admin123") {
-        // Set admin token cookie
-        Cookies.set('admin_token', 'true', { expires: values.rememberMe ? 30 : 1 })
-        router.push("/admin/dashboard")
+      // Find user in our mock database
+      const user = users.find(u => u.email === values.email && u.password === values.password)
+      
+      if (user) {
+        // Set token cookie with user info
+        Cookies.set('token', 'mock-token', { 
+          expires: values.rememberMe ? 7 : 1,
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        })
+        
+        // Store user info in localStorage for easy access
+        localStorage.setItem('user', JSON.stringify({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }))
+        
+        // Redirect based on role
+        if (user.role === 'admin') {
+          router.push("/admin/dashboard")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
-        // Regular student login
-        router.push("/dashboard")
+        setError("Invalid email or password. Please try again.")
       }
     } catch (error) {
-      setError("Invalid email or password. Please try again.")
+      setError("An error occurred. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -83,7 +121,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="admin@example.com" {...field} />
+                      <Input type="email" placeholder="your@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -107,31 +145,44 @@ export default function LoginPage() {
                   control={form.control}
                   name="rememberMe"
                   render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
-                      <FormLabel className="text-sm font-normal">Remember me</FormLabel>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Remember me</FormLabel>
+                      </div>
                     </FormItem>
                   )}
                 />
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
                   Forgot password?
                 </Link>
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Logging in..." : "Login"}
+                {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline">
-              Register
+        <CardFooter className="flex flex-col space-y-4">
+          <div className="text-center text-sm">
+            Don't have an account?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Sign up
             </Link>
-          </p>
+          </div>
+          <div className="text-center text-xs text-muted-foreground">
+            <p>Demo credentials:</p>
+            <p>Admin: admin@example.com / password</p>
+            <p>Student: mohamedijlal27@outlook.com / Ijlal@123</p>
+          </div>
         </CardFooter>
       </Card>
     </div>

@@ -1,10 +1,15 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, Clock, Award, Calendar, PlayCircle, BarChart4, CheckCircle } from "lucide-react"
+import { BookOpen, Clock, Award, Calendar, PlayCircle, BarChart4, CheckCircle, LogOut } from "lucide-react"
+import Cookies from 'js-cookie'
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 // Mock enrolled courses data
 const enrolledCourses = [
@@ -70,16 +75,43 @@ const achievements = [
 ]
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const [userName, setUserName] = useState("Student")
+  
+  useEffect(() => {
+    // Get user info from localStorage
+    const userInfo = localStorage.getItem('user')
+    if (userInfo) {
+      const user = JSON.parse(userInfo)
+      setUserName(user.name)
+    }
+  }, [])
+  
+  const handleLogout = () => {
+    // Remove the token cookie
+    Cookies.remove('token', { path: '/' })
+    // Clear user info from localStorage
+    localStorage.removeItem('user')
+    // Redirect to login page
+    router.push('/login')
+  }
+  
   return (
     <div className="container mx-auto max-w-7xl py-10 px-4">
       <div className="mb-8 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
         <div>
-          <h1 className="text-3xl font-bold">Student Dashboard</h1>
+          <h1 className="text-3xl font-bold">Welcome, {userName}!</h1>
           <p className="text-muted-foreground">Track your progress and continue learning</p>
         </div>
-        <Button asChild>
-          <Link href="/courses">Browse More Courses</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/courses">Browse More Courses</Link>
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-8 md:grid-cols-12">

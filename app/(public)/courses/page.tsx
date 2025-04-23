@@ -78,8 +78,8 @@ const courses = [
 
 export default function CoursesPage() {
   return (
-    <div className="container py-10">
-      <div className="mb-8 space-y-4">
+    <div className="container mx-auto max-w-7xl px-4 py-10">
+      <div className="mb-8 space-y-4 text-center">
         <h1 className="text-3xl font-bold md:text-4xl">Browse Courses</h1>
         <p className="text-muted-foreground">Discover our wide range of courses to enhance your skills and knowledge</p>
       </div>
@@ -131,8 +131,8 @@ export default function CoursesPage() {
                 className="object-cover"
               />
             </div>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center gap-2">
                 <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
                   {course.category}
                 </span>
@@ -140,9 +140,9 @@ export default function CoursesPage() {
               </div>
               <CardTitle className="line-clamp-1">{course.title}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-center">
               <p className="line-clamp-2 text-sm text-muted-foreground">{course.description}</p>
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-4 flex items-center justify-center gap-4">
                 <div className="flex items-center gap-1">
                   <span className="text-sm font-medium">{course.rating}</span>
                   <div className="flex text-yellow-400">
@@ -167,7 +167,7 @@ export default function CoursesPage() {
                 <span className="font-bold text-blue-600">${course.price}</span>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex justify-center">
               <Button asChild className="w-full">
                 <Link href={`/courses/${course.id}`}>View Course</Link>
               </Button>

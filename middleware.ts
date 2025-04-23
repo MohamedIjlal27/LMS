@@ -16,8 +16,8 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value || ""
 
   // Redirect logic
-  if (isPublicPath && token) {
-    // If the user is on a public path and has a token, redirect to dashboard
+  if (isPublicPath && token && (path === "/login" || path === "/register")) {
+    // If the user is on login/register and has a token, redirect to dashboard
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
