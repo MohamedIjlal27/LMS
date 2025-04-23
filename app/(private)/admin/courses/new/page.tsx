@@ -70,13 +70,23 @@ export default function NewCoursePage() {
     setIsSubmitting(true)
 
     try {
-      // In a real implementation, this would be an API call to create the course
-      console.log("Course values:", values)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      if (!response.ok) {
+        throw new Error('Failed to create course')
+      }
 
       setSubmitSuccess(true)
+      toast({
+        title: "Success",
+        description: "Course created successfully!",
+      })
 
       // Redirect to courses page after successful submission
       setTimeout(() => {
@@ -84,6 +94,11 @@ export default function NewCoursePage() {
       }, 2000)
     } catch (error) {
       console.error("Error creating course:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create course. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
