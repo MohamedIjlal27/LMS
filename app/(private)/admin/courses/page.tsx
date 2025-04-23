@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,88 +23,53 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, BookOpen } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
-// Mock course data
-const initialCourses = [
-  {
-    id: 1,
-    title: "Introduction to Web Development",
-    category: "Development",
-    level: "Beginner",
-    price: 49.99,
-    instructor: "John Smith",
-    students: 1245,
-    status: "Published",
-  },
-  {
-    id: 2,
-    title: "Advanced React Techniques",
-    category: "Development",
-    level: "Advanced",
-    price: 79.99,
-    instructor: "Sarah Johnson",
-    students: 873,
-    status: "Published",
-  },
-  {
-    id: 3,
-    title: "Data Science Fundamentals",
-    category: "Data Science",
-    level: "Intermediate",
-    price: 59.99,
-    instructor: "Michael Chen",
-    students: 1032,
-    status: "Published",
-  },
-  {
-    id: 4,
-    title: "UX/UI Design Principles",
-    category: "Design",
-    level: "Beginner",
-    price: 49.99,
-    instructor: "Emily Rodriguez",
-    students: 756,
-    status: "Published",
-  },
-  {
-    id: 5,
-    title: "Machine Learning for Beginners",
-    category: "Data Science",
-    level: "Beginner",
-    price: 69.99,
-    instructor: "David Kim",
-    students: 1189,
-    status: "Published",
-  },
-  {
-    id: 6,
-    title: "Full-Stack JavaScript Development",
-    category: "Development",
-    level: "Intermediate",
-    price: 89.99,
-    instructor: "Alex Turner",
-    students: 942,
-    status: "Draft",
-  },
-  {
-    id: 7,
-    title: "Python for Data Analysis",
-    category: "Data Science",
-    level: "Intermediate",
-    price: 69.99,
-    instructor: "Lisa Wang",
-    students: 0,
-    status: "Draft",
-  },
-]
+interface Course {
+  _id: string
+  title: string
+  category: string
+  level: string
+  price: number
+  instructor: string
+  students: number
+  isPublished: boolean
+  imageUrl?: string
+}
 
 export default function AdminCoursesPage() {
-  const [courses, setCourses] = useState(initialCourses)
+  const { toast } = useToast()
+  const [courses, setCourses] = useState<Course[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [courseToDelete, setCourseToDelete] = useState<number | null>(null)
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchCourses()
+  }, [])
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses')
+      }
+      const data = await response.json()
+      setCourses(data)
+    } catch (error) {
+      console.error('Error fetching courses:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load courses. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Filter courses based on search query and filters
   const filteredCourses = courses.filter((course) => {
@@ -112,21 +77,45 @@ export default function AdminCoursesPage() {
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.instructor.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || course.category === categoryFilter
-    const matchesStatus = statusFilter === "all" || course.status === statusFilter
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "Published" && course.isPublished) ||
+      (statusFilter === "Draft" && !course.isPublished)
 
     return matchesSearch && matchesCategory && matchesStatus
   })
 
-  const handleDeleteClick = (courseId: number) => {
+  const handleDeleteClick = (courseId: string) => {
     setCourseToDelete(courseId)
     setDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (courseToDelete) {
-      setCourses(courses.filter((course) => course.id !== courseToDelete))
-      setDeleteDialogOpen(false)
-      setCourseToDelete(null)
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses/${courseToDelete}`, {
+          method: 'DELETE',
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to delete course')
+        }
+
+        setCourses(courses.filter((course) => course._id !== courseToDelete))
+        toast({
+          title: "Success",
+          description: "Course deleted successfully",
+        })
+      } catch (error) {
+        console.error('Error deleting course:', error)
+        toast({
+          title: "Error",
+          description: "Failed to delete course. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setDeleteDialogOpen(false)
+        setCourseToDelete(null)
+      }
     }
   }
 
@@ -178,7 +167,6 @@ export default function AdminCoursesPage() {
             <option value="all">All Statuses</option>
             <option value="Published">Published</option>
             <option value="Draft">Draft</option>
-            <option value="Archived">Archived</option>
           </select>
         </div>
       </div>
@@ -199,7 +187,13 @@ export default function AdminCoursesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCourses.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  Loading courses...
+                </TableCell>
+              </TableRow>
+            ) : filteredCourses.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
                   No courses found.
@@ -207,7 +201,7 @@ export default function AdminCoursesPage() {
               </TableRow>
             ) : (
               filteredCourses.map((course) => (
-                <TableRow key={course.id}>
+                <TableRow key={course._id}>
                   <TableCell className="text-center font-medium">{course.title}</TableCell>
                   <TableCell className="text-center">{course.category}</TableCell>
                   <TableCell className="text-center">{course.level}</TableCell>
@@ -217,14 +211,12 @@ export default function AdminCoursesPage() {
                   <TableCell className="text-center">
                     <span
                       className={`inline-flex justify-center rounded-full px-2 py-1 text-xs font-medium ${
-                        course.status === "Published"
+                        course.isPublished
                           ? "bg-green-100 text-green-800"
-                          : course.status === "Draft"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+                          : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {course.status}
+                      {course.isPublished ? "Published" : "Draft"}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
@@ -239,19 +231,19 @@ export default function AdminCoursesPage() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/courses/${course.id}`}>
+                          <Link href={`/admin/courses/${course._id}`}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/courses/${course.id}/edit`}>
+                          <Link href={`/admin/courses/${course._id}/edit`}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/courses/${course.id}/curriculum`}>
+                          <Link href={`/admin/courses/${course._id}/curriculum`}>
                             <BookOpen className="mr-2 h-4 w-4" />
                             Manage Curriculum
                           </Link>
@@ -259,7 +251,7 @@ export default function AdminCoursesPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDeleteClick(course.id)}
+                          onClick={() => handleDeleteClick(course._id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
