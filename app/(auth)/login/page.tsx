@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Eye, EyeOff } from "lucide-react"
 import Cookies from 'js-cookie'
 import { authApi } from "@/lib/api/auth"
 
@@ -30,6 +30,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,23 +50,23 @@ export default function LoginPage() {
         email: values.email,
         password: values.password,
       })
-
+      
       // Set token cookie
       Cookies.set('token', token, { 
-        expires: values.rememberMe ? 7 : 1,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      })
-      
+          expires: values.rememberMe ? 7 : 1,
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        })
+        
       // Store user info in localStorage
       localStorage.setItem('user', JSON.stringify(user))
-      
-      // Redirect based on role
-      if (user.role === 'admin') {
-        router.push("/admin/dashboard")
-      } else {
-        router.push("/dashboard")
+        
+        // Redirect based on role
+        if (user.role === 'admin') {
+          router.push("/admin/dashboard")
+        } else {
+          router.push("/dashboard")
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred. Please try again.")
@@ -97,7 +98,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="your@email.com" {...field} />
+                      <Input type="email" placeholder="Enter your email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -109,9 +110,24 @@ export default function LoginPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="password"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
