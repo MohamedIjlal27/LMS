@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -5,78 +7,51 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search } from "lucide-react"
-
-// Mock course data
-const courses = [
-  {
-    id: 1,
-    title: "Introduction to Web Development",
-    description: "Learn the fundamentals of web development including HTML, CSS, and JavaScript.",
-    category: "Development",
-    level: "Beginner",
-    price: 49.99,
-    instructor: "John Smith",
-    rating: 4.7,
-    students: 1245,
-  },
-  {
-    id: 2,
-    title: "Advanced React Techniques",
-    description: "Master advanced React concepts including hooks, context API, and performance optimization.",
-    category: "Development",
-    level: "Advanced",
-    price: 79.99,
-    instructor: "Sarah Johnson",
-    rating: 4.9,
-    students: 873,
-  },
-  {
-    id: 3,
-    title: "Data Science Fundamentals",
-    description: "An introduction to data science concepts, tools, and methodologies.",
-    category: "Data Science",
-    level: "Intermediate",
-    price: 59.99,
-    instructor: "Michael Chen",
-    rating: 4.5,
-    students: 1032,
-  },
-  {
-    id: 4,
-    title: "UX/UI Design Principles",
-    description: "Learn the core principles of user experience and interface design.",
-    category: "Design",
-    level: "Beginner",
-    price: 49.99,
-    instructor: "Emily Rodriguez",
-    rating: 4.8,
-    students: 756,
-  },
-  {
-    id: 5,
-    title: "Machine Learning for Beginners",
-    description: "A beginner-friendly introduction to machine learning algorithms and applications.",
-    category: "Data Science",
-    level: "Beginner",
-    price: 69.99,
-    instructor: "David Kim",
-    rating: 4.6,
-    students: 1189,
-  },
-  {
-    id: 6,
-    title: "Full-Stack JavaScript Development",
-    description: "Build complete web applications with Node.js, Express, and MongoDB.",
-    category: "Development",
-    level: "Intermediate",
-    price: 89.99,
-    instructor: "Alex Turner",
-    rating: 4.8,
-    students: 942,
-  },
-]
+import { useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
+import { Course } from "@/types/course"
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch courses')
+        }
+        const data = await response.json()
+        setCourses(data)
+      } catch (err) {
+        setError('Failed to load courses')
+        console.error('Error fetching courses:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCourses()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8 space-y-4 text-center">
@@ -122,10 +97,10 @@ export default function CoursesPage() {
       {/* Course Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => (
-          <Card key={course.id} className="overflow-hidden">
+          <Card key={course._id} className="overflow-hidden">
             <div className="relative h-48 w-full">
               <Image
-                src={`/placeholder.svg?height=200&width=400&text=Course+${course.id}`}
+                src={course.imageUrl || `/placeholder.svg?height=200&width=400&text=Course+${course._id}`}
                 alt={course.title}
                 fill
                 className="object-cover"
@@ -169,7 +144,7 @@ export default function CoursesPage() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <Button asChild className="w-full">
-                <Link href={`/courses/${course.id}`}>View Course</Link>
+                <Link href={`/courses/${course._id}`}>View Course</Link>
               </Button>
             </CardFooter>
           </Card>
