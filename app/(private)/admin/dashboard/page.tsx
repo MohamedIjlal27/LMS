@@ -223,22 +223,35 @@ export default function AdminDashboardPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Server Status</span>
-                  <span className="text-sm font-medium text-green-600">
+                  <span className={`text-sm font-medium ${systemStatus?.serverStatus === 'Operational' ? 'text-green-600' : 'text-red-600'}`}>
                     {systemStatus?.serverStatus || 'Unknown'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Active Users</span>
                   <span className="text-sm font-medium">
-                    {systemStatus?.activeUsers || 0}
+                    {systemStatus?.activeUsers?.toLocaleString() || 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">System Load</span>
-                  <span className="text-sm font-medium">
-                    {systemStatus?.systemLoad || '0'}%
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-16 rounded-full bg-gray-200">
+                      <div
+                        className="h-full rounded-full bg-blue-600"
+                        style={{ width: `${systemStatus?.systemLoad || 0}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">
+                      {systemStatus?.systemLoad || 0}%
+                    </span>
+                  </div>
                 </div>
+                {systemStatus?.lastUpdated && (
+                  <div className="pt-2 text-xs text-muted-foreground">
+                    Last updated: {new Date(systemStatus.lastUpdated).toLocaleTimeString()}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
