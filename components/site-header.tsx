@@ -12,6 +12,7 @@ export function SiteHeader() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userName, setUserName] = useState("")
+  const [userRole, setUserRole] = useState("")
 
   useEffect(() => {
     // Check if user is authenticated by looking for token in cookies
@@ -23,6 +24,7 @@ export function SiteHeader() {
     if (userInfo) {
       const user = JSON.parse(userInfo)
       setUserName(user.name)
+      setUserRole(user.role)
     }
   }, [])
 
@@ -33,6 +35,10 @@ export function SiteHeader() {
     localStorage.removeItem('user')
     // Redirect to login page
     router.push('/login')
+  }
+
+  const getDashboardLink = () => {
+    return userRole === 'admin' ? '/admin/dashboard' : '/dashboard'
   }
 
   return (
@@ -69,7 +75,7 @@ export function SiteHeader() {
                     {userName || "User"}
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard">Dashboard</Link>
+                    <Link href={getDashboardLink()}>Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/profile">Profile</Link>
@@ -110,7 +116,7 @@ export function SiteHeader() {
                 {isAuthenticated ? (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard">Dashboard</Link>
+                      <Link href={getDashboardLink()}>Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                       <LogOut className="mr-2 h-4 w-4" />
