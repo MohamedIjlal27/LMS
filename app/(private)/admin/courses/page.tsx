@@ -51,7 +51,6 @@ export default function AdminCoursesPage() {
     }
   }
 
-  // Filter courses based on search query and filters
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -113,8 +112,6 @@ export default function AdminCoursesPage() {
           </Link>
         </Button>
       </div>
-
-      {/* Filters */}
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <div className="relative md:col-span-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -151,7 +148,7 @@ export default function AdminCoursesPage() {
         </div>
       </div>
 
-      {/* Courses Table */}
+
       <div className="rounded-md border">
         {isLoading ? (
           <div className="h-24 flex items-center justify-center">
@@ -170,7 +167,7 @@ export default function AdminCoursesPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+ 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

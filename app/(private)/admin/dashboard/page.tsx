@@ -79,7 +79,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="text-center">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -143,9 +142,7 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Main Content */}
       <div className="grid gap-8 md:grid-cols-12">
-        {/* Tables - 8/12 width */}
         <div className="md:col-span-8">
           <Tabs defaultValue="students" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -189,7 +186,6 @@ export default function AdminDashboardPage() {
           </Tabs>
         </div>
 
-        {/* Sidebar - 4/12 width */}
         <div className="space-y-8 md:col-span-4">
           <Card>
             <CardHeader className="text-center">

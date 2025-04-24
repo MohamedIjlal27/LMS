@@ -83,7 +83,6 @@ export default function CourseDetailsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Course Image */}
         <div className="relative h-[300px] w-full overflow-hidden rounded-lg">
           <Image
             src={course.imageUrl || "/placeholder.svg?height=300&width=600"}
@@ -93,7 +92,6 @@ export default function CourseDetailsPage() {
           />
         </div>
 
-        {/* Course Details */}
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">{course.title}</h1>

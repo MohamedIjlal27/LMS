@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,23 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle2 } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 
-// Mock data for students and courses
-const students = [
-  { id: "1", name: "John Doe" },
-  { id: "2", name: "Jane Smith" },
-  { id: "3", name: "Robert Johnson" },
-  { id: "4", name: "Emily Davis" },
-  { id: "5", name: "Michael Wilson" },
-]
+interface Student {
+  _id: string
+  name: string
+}
 
-const courses = [
-  { id: "1", title: "Introduction to Web Development" },
-  { id: "2", title: "Advanced React Techniques" },
-  { id: "3", title: "Data Science Fundamentals" },
-  { id: "4", title: "UX/UI Design Principles" },
-  { id: "5", title: "Machine Learning for Beginners" },
-]
+interface Course {
+  _id: string
+  title: string
+}
 
 const formSchema = z.object({
   studentId: z.string({
@@ -40,8 +34,47 @@ const formSchema = z.object({
 
 export default function NewEnrollmentPage() {
   const router = useRouter()
+  const { token } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [students, setStudents] = useState<Student[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [studentsResponse, coursesResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/students`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          })
+        ])
+
+        if (studentsResponse.ok) {
+          const studentsData = await studentsResponse.json()
+          setStudents(studentsData)
+        }
+
+        if (coursesResponse.ok) {
+          const coursesData = await coursesResponse.json()
+          setCourses(coursesData)
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [token])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,23 +88,38 @@ export default function NewEnrollmentPage() {
     setIsSubmitting(true)
 
     try {
-      // In a real implementation, this would be an API call to create the enrollment
-      console.log("Enrollment values:", values)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/enrollments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      })
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      setSubmitSuccess(true)
-
-      // Redirect to enrollments page after successful submission
-      setTimeout(() => {
-        router.push("/admin/enrollments")
-      }, 2000)
+      if (response.ok) {
+        setSubmitSuccess(true)
+        setTimeout(() => {
+          router.push("/admin/enrollments")
+        }, 2000)
+      } else {
+        throw new Error('Failed to create enrollment')
+      }
     } catch (error) {
       console.error("Error creating enrollment:", error)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container py-10">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -113,7 +161,7 @@ export default function NewEnrollmentPage() {
                         </FormControl>
                         <SelectContent>
                           {students.map((student) => (
-                            <SelectItem key={student.id} value={student.id}>
+                            <SelectItem key={student._id} value={student._id}>
                               {student.name}
                             </SelectItem>
                           ))}
@@ -139,7 +187,7 @@ export default function NewEnrollmentPage() {
                         </FormControl>
                         <SelectContent>
                           {courses.map((course) => (
-                            <SelectItem key={course.id} value={course.id}>
+                            <SelectItem key={course._id} value={course._id}>
                               {course.title}
                             </SelectItem>
                           ))}

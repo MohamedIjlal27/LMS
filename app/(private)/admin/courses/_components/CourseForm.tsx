@@ -75,7 +75,6 @@ export default function CourseForm({ initialData, isEditing = false }: CourseFor
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
-      // If we're editing and the image hasn't changed, use the current image URL
       if (isEditing && values.imageUrl === currentImageUrl) {
         values.imageUrl = currentImageUrl
       }
@@ -102,7 +101,6 @@ export default function CourseForm({ initialData, isEditing = false }: CourseFor
         description: isEditing ? "Course updated successfully!" : "Course created successfully!",
       })
 
-      // Redirect to courses page after successful submission
       setTimeout(() => {
         router.push("/admin/courses")
         router.refresh()

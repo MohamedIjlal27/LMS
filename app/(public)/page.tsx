@@ -6,7 +6,6 @@ import { GraduationCap, BookOpen, Users, CheckCircle } from "lucide-react"
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-indigo-700 py-20 text-white">
         <div className="container mx-auto px-4">
           <div className="grid gap-12 md:grid-cols-2 md:items-center">
@@ -40,7 +39,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="mb-12 text-center text-3xl font-bold md:text-4xl">Why Choose Our Platform</h2>
@@ -77,7 +75,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Popular Courses Section */}
       <section className="bg-gray-50 py-20">
         <div className="container mx-auto px-4">
           <h2 className="mb-12 text-center text-3xl font-bold md:text-4xl">Popular Courses</h2>
@@ -119,7 +116,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="mb-12 text-center text-3xl font-bold md:text-4xl">What Our Students Say</h2>
@@ -150,7 +146,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="bg-blue-600 py-16 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-6 text-3xl font-bold md:text-4xl">Ready to Start Learning?</h2>

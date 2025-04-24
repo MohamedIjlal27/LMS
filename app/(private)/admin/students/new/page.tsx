@@ -54,13 +54,11 @@ export default function NewStudentPage() {
       await studentsApi.create(values);
       setSubmitSuccess(true)
 
-      // Redirect to students page after successful submission
       setTimeout(() => {
         router.push("/admin/students")
       }, 2000)
     } catch (error) {
       console.error("Error creating student:", error)
-      // You might want to show an error toast or message here
     } finally {
       setIsSubmitting(false)
     }

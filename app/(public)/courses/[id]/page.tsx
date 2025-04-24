@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Course } from "@/types/course"
 import { useParams } from "next/navigation"
+import { PaymentModal } from "@/components/payment-modal"
 
 export default function CoursePage() {
   const params = useParams()
@@ -307,9 +308,7 @@ export default function CoursePage() {
               <CardTitle className="text-center text-3xl font-bold">${course.price}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full" size="lg">
-                Enroll Now
-              </Button>
+              <PaymentModal courseId={course._id} price={course.price} />
               <p className="text-center text-sm text-muted-foreground">30-Day Money-Back Guarantee</p>
               <div className="space-y-2">
                 <div className="flex items-center justify-center gap-2">

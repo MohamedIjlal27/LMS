@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,109 +22,96 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 
-// Mock enrollment data
-const initialEnrollments = [
-  {
-    id: 1,
-    student: "John Doe",
-    studentId: 1,
-    course: "Introduction to Web Development",
-    courseId: 1,
-    enrollmentDate: "Jan 20, 2023",
-    progress: 75,
-    status: "In Progress",
-  },
-  {
-    id: 2,
-    student: "Jane Smith",
-    studentId: 2,
-    course: "Advanced React Techniques",
-    courseId: 2,
-    enrollmentDate: "Feb 25, 2023",
-    progress: 30,
-    status: "In Progress",
-  },
-  {
-    id: 3,
-    student: "Robert Johnson",
-    studentId: 3,
-    course: "Data Science Fundamentals",
-    courseId: 3,
-    enrollmentDate: "Mar 15, 2023",
-    progress: 100,
-    status: "Completed",
-  },
-  {
-    id: 4,
-    student: "Emily Davis",
-    studentId: 4,
-    course: "UX/UI Design Principles",
-    courseId: 4,
-    enrollmentDate: "Apr 10, 2023",
-    progress: 60,
-    status: "In Progress",
-  },
-  {
-    id: 5,
-    student: "Michael Wilson",
-    studentId: 5,
-    course: "Machine Learning for Beginners",
-    courseId: 5,
-    enrollmentDate: "May 18, 2023",
-    progress: 0,
-    status: "Not Started",
-  },
-  {
-    id: 6,
-    student: "Sarah Brown",
-    studentId: 6,
-    course: "Full-Stack JavaScript Development",
-    courseId: 6,
-    enrollmentDate: "Jun 12, 2023",
-    progress: 90,
-    status: "In Progress",
-  },
-  {
-    id: 7,
-    student: "David Miller",
-    studentId: 7,
-    course: "Python for Data Analysis",
-    courseId: 7,
-    enrollmentDate: "Jul 25, 2023",
-    progress: 100,
-    status: "Completed",
-  },
-]
+interface Enrollment {
+  _id: string
+  student: {
+    _id: string
+    name: string
+  }
+  course: {
+    _id: string
+    title: string
+  }
+  createdAt: string
+  progress: number
+  status: string
+}
 
 export default function AdminEnrollmentsPage() {
-  const [enrollments, setEnrollments] = useState(initialEnrollments)
+  const { token } = useAuth()
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [enrollmentToDelete, setEnrollmentToDelete] = useState<number | null>(null)
+  const [enrollmentToDelete, setEnrollmentToDelete] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Filter enrollments based on search query and status filter
+  useEffect(() => {
+    fetchEnrollments()
+  }, [token])
+
+  const fetchEnrollments = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/enrollments`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setEnrollments(data)
+      }
+    } catch (error) {
+      console.error('Error fetching enrollments:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const filteredEnrollments = enrollments.filter((enrollment) => {
     const matchesSearch =
-      enrollment.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enrollment.course.toLowerCase().includes(searchQuery.toLowerCase())
+      enrollment.student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      enrollment.course.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || enrollment.status === statusFilter
 
     return matchesSearch && matchesStatus
   })
 
-  const handleDeleteClick = (enrollmentId: number) => {
+  const handleDeleteClick = (enrollmentId: string) => {
     setEnrollmentToDelete(enrollmentId)
     setDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (enrollmentToDelete) {
-      setEnrollments(enrollments.filter((enrollment) => enrollment.id !== enrollmentToDelete))
-      setDeleteDialogOpen(false)
-      setEnrollmentToDelete(null)
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/enrollments/${enrollmentToDelete}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        if (response.ok) {
+          setEnrollments(enrollments.filter((enrollment) => enrollment._id !== enrollmentToDelete))
+          setDeleteDialogOpen(false)
+          setEnrollmentToDelete(null)
+        }
+      } catch (error) {
+        console.error('Error deleting enrollment:', error)
+      }
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container py-10">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -142,7 +129,6 @@ export default function AdminEnrollmentsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <div className="relative md:col-span-2">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -160,14 +146,13 @@ export default function AdminEnrollmentsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All Statuses</option>
-            <option value="Not Started">Not Started</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
           </select>
         </div>
       </div>
 
-      {/* Enrollments Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -189,18 +174,18 @@ export default function AdminEnrollmentsPage() {
               </TableRow>
             ) : (
               filteredEnrollments.map((enrollment) => (
-                <TableRow key={enrollment.id}>
+                <TableRow key={enrollment._id}>
                   <TableCell className="font-medium">
-                    <Link href={`/admin/students/${enrollment.studentId}`} className="hover:underline">
-                      {enrollment.student}
+                    <Link href={`/admin/students/${enrollment.student._id}`} className="hover:underline">
+                      {enrollment.student.name}
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Link href={`/admin/courses/${enrollment.courseId}`} className="hover:underline">
-                      {enrollment.course}
+                    <Link href={`/admin/courses/${enrollment.course._id}`} className="hover:underline">
+                      {enrollment.course.title}
                     </Link>
                   </TableCell>
-                  <TableCell>{enrollment.enrollmentDate}</TableCell>
+                  <TableCell>{new Date(enrollment.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-full max-w-[100px] rounded-full bg-gray-200">
@@ -215,14 +200,14 @@ export default function AdminEnrollmentsPage() {
                   <TableCell>
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        enrollment.status === "Completed"
+                        enrollment.status === "completed"
                           ? "bg-green-100 text-green-800"
-                          : enrollment.status === "In Progress"
+                          : enrollment.status === "active"
                             ? "bg-blue-100 text-blue-800"
                             : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {enrollment.status}
+                      {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -237,19 +222,19 @@ export default function AdminEnrollmentsPage() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/enrollments/${enrollment.id}`}>
+                          <Link href={`/admin/enrollments/${enrollment._id}`}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/enrollments/${enrollment.id}/edit`}>
+                          <Link href={`/admin/enrollments/${enrollment._id}/edit`}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteClick(enrollment.id)}
+                          onClick={() => handleDeleteClick(enrollment._id)}
                           className="text-red-600 focus:bg-red-50 focus:text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -265,7 +250,6 @@ export default function AdminEnrollmentsPage() {
         </Table>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

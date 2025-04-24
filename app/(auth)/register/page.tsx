@@ -65,7 +65,7 @@ export default function RegisterPage() {
         lastName: values.lastName,
       })
 
-      // Set token cookie
+
       Cookies.set('token', token, { 
         expires: 1,
         path: '/',
@@ -73,7 +73,7 @@ export default function RegisterPage() {
         sameSite: 'strict'
       })
       
-      // Store user info in localStorage
+
       localStorage.setItem('user', JSON.stringify(user))
 
       setSubmitStatus({
@@ -81,7 +81,7 @@ export default function RegisterPage() {
         message: "Registration successful! Redirecting to dashboard...",
       })
 
-      // Redirect to dashboard after successful registration
+
       setTimeout(() => {
         if (user.role === 'admin') {
           router.push("/admin/dashboard")

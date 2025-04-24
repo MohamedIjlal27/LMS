@@ -13,14 +13,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, Mail } from "lucide-react"
-import { studentsApi, Student } from "@/lib/api/students"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { ColDef } from "ag-grid-community"
 import { ValueFormatterParams, ICellRendererParams } from 'ag-grid-community'
+import { useAuth } from "@/hooks/useAuth"
+
+interface Student {
+  _id: string
+  name: string
+  email: string
+  bio: string
+  createdAt: string
+  isActive: boolean
+}
 
 export default function AdminStudentsPage() {
+  const { token } = useAuth()
   const [students, setStudents] = useState<Student[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -30,12 +40,21 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     fetchStudents()
-  }, [])
+  }, [token])
 
   const fetchStudents = async () => {
     try {
-      const data = await studentsApi.getAll()
-      setStudents(data)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/students`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setStudents(data)
+      } else {
+        throw new Error('Failed to fetch students')
+      }
     } catch (error) {
       console.error("Error fetching students:", error)
       toast.error("Failed to load students")
@@ -52,9 +71,18 @@ export default function AdminStudentsPage() {
   const confirmDelete = async () => {
     if (studentToDelete) {
       try {
-        await studentsApi.remove(studentToDelete)
-        setStudents(students.filter((student) => student._id !== studentToDelete))
-        toast.success("Student deleted successfully")
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/students/${studentToDelete}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        if (response.ok) {
+          setStudents(students.filter((student) => student._id !== studentToDelete))
+          toast.success("Student deleted successfully")
+        } else {
+          throw new Error('Failed to delete student')
+        }
       } catch (error) {
         console.error("Error deleting student:", error)
         toast.error("Failed to delete student")
@@ -172,7 +200,6 @@ export default function AdminStudentsPage() {
         />
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

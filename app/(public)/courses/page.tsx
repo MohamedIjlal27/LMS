@@ -59,7 +59,6 @@ export default function CoursesPage() {
         <p className="text-muted-foreground">Discover our wide range of courses to enhance your skills and knowledge</p>
       </div>
 
-      {/* Search and Filter */}
       <div className="mb-8 grid gap-4 md:grid-cols-4">
         <div className="relative md:col-span-2">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -94,7 +93,6 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {/* Course Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => (
           <Card key={course._id} className="overflow-hidden">

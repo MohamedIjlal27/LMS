@@ -51,7 +51,7 @@ export default function LoginPage() {
         password: values.password,
       })
       
-      // Set token cookie
+
       Cookies.set('token', token, { 
           expires: values.rememberMe ? 7 : 1,
           path: '/',
@@ -59,10 +59,8 @@ export default function LoginPage() {
           sameSite: 'strict'
         })
         
-      // Store user info in localStorage
       localStorage.setItem('user', JSON.stringify(user))
-        
-        // Redirect based on role
+
         if (user.role === 'admin') {
           router.push("/admin/dashboard")
         } else {

@@ -7,30 +7,46 @@ import { cookies } from "next/headers"
 // like NextAuth.js, Auth.js, or a custom solution with JWT or session-based auth
 
 export async function login(email: string, password: string) {
-  // In a real application, you would validate credentials against a database
-  // For this example, we'll use a mock authentication
-  
-  // Mock authentication - in a real app, this would be a database check
-  if (email === "admin@example.com" && password === "password") {
-    // Set a cookie with a token
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Login failed")
+    }
+
+    const data = await response.json()
+    
+    // Set token in cookies for server-side
     const cookieStore = await cookies()
-    cookieStore.set("token", "mock-token", {
+    cookieStore.set("token", data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 60 * 60 * 24 * 7, // 1 week
     })
-      
-    return { success: true }
+
+    // Return token for client-side storage
+    return { success: true, token: data.token }
+  } catch (error) {
+    return { success: false, error: "Invalid credentials" }
   }
-  
-  return { success: false, error: "Invalid credentials" }
 }
 
 export async function logout() {
   // Delete the token cookie
   const cookieStore = await cookies()
   cookieStore.delete("token")
+  
+  // Also clear localStorage on client side
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('token')
+  }
   
   return { success: true }
 }
@@ -44,21 +60,26 @@ export async function checkAuth() {
 }
 
 export async function getUser() {
-  // In a real application, you would decode the token and get the user data
-  // For this example, we'll return a mock user
-  
   const cookieStore = await cookies()
   const token = cookieStore.get("token")
   
   if (!token) {
     return null
   }
-  
-  // Mock user data
-  return {
-    id: 1,
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "admin",
+
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to get user data")
+    }
+
+    return await response.json()
+  } catch (error) {
+    return null
   }
 } 
