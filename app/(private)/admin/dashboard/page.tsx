@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,31 +8,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, Users, GraduationCap, BarChart, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { Student, Course, Enrollment, studentColumns, courseColumns, enrollmentColumns } from "@/components/ui/table-columns"
-
-// Row Data
-const studentRowData: Student[] = [
-  { id: 1, name: "John Doe", email: "john@example.com", date: "2 days ago" },
-  { id: 2, name: "Jane Smith", email: "jane@example.com", date: "3 days ago" },
-  { id: 3, name: "Robert Johnson", email: "robert@example.com", date: "1 week ago" },
-  { id: 4, name: "Emily Davis", email: "emily@example.com", date: "1 week ago" },
-  { id: 5, name: "Michael Wilson", email: "michael@example.com", date: "2 weeks ago" },
-]
-
-const courseRowData: Course[] = [
-  { id: 1, title: "Introduction to Web Development", category: "Development", students: 1245 },
-  { id: 2, title: "Advanced React Techniques", category: "Development", students: 873 },
-  { id: 3, title: "Data Science Fundamentals", category: "Data Science", students: 1032 },
-  { id: 4, title: "UX/UI Design Principles", category: "Design", students: 756 },
-  { id: 5, title: "Machine Learning for Beginners", category: "Data Science", students: 1189 },
-]
-
-const enrollmentRowData: Enrollment[] = [
-  { id: 1, student: "John Doe", course: "Web Development", date: "Today" },
-  { id: 2, student: "Jane Smith", course: "React Techniques", date: "Yesterday" },
-  { id: 3, student: "Robert Johnson", course: "UX Design", date: "2 days ago" },
-]
+import { dashboardApi, DashboardStats } from "@/lib/api/dashboard"
+import { toast } from "sonner"
 
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [recentStudents, setRecentStudents] = useState([])
+  const [popularCourses, setPopularCourses] = useState([])
+  const [recentEnrollments, setRecentEnrollments] = useState([])
+  const [systemStatus, setSystemStatus] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const [stats, students, courses, enrollments, status] = await Promise.all([
+        dashboardApi.getStats(),
+        dashboardApi.getRecentStudents(),
+        dashboardApi.getPopularCourses(),
+        dashboardApi.getRecentEnrollments(),
+        dashboardApi.getSystemStatus()
+      ])
+
+      setStats(stats)
+      setRecentStudents(students)
+      setPopularCourses(courses)
+      setRecentEnrollments(enrollments)
+      setSystemStatus(status)
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error)
+      toast.error("Failed to load dashboard data")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-10">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading dashboard data...</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
@@ -63,11 +87,11 @@ export default function AdminDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,543</div>
+            <div className="text-2xl font-bold">{stats?.totalStudents.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="flex items-center justify-center text-green-600">
-                <ArrowUpRight className="mr-1 h-4 w-4" />
-                12% from last month
+              <span className={`flex items-center justify-center ${(stats?.studentGrowth ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {(stats?.studentGrowth ?? 0) >= 0 ? <ArrowUpRight className="mr-1 h-4 w-4" /> : <ArrowDownRight className="mr-1 h-4 w-4" />}
+                {Math.abs(stats?.studentGrowth ?? 0)}% from last month
               </span>
             </p>
           </CardContent>
@@ -78,11 +102,11 @@ export default function AdminDashboardPage() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">48</div>
+            <div className="text-2xl font-bold">{stats?.totalCourses.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="flex items-center justify-center text-green-600">
-                <ArrowUpRight className="mr-1 h-4 w-4" />
-                4% from last month
+              <span className={`flex items-center justify-center ${(stats?.courseGrowth ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {(stats?.courseGrowth ?? 0) >= 0 ? <ArrowUpRight className="mr-1 h-4 w-4" /> : <ArrowDownRight className="mr-1 h-4 w-4" />}
+                {Math.abs(stats?.courseGrowth ?? 0)}% from last month
               </span>
             </p>
           </CardContent>
@@ -93,11 +117,11 @@ export default function AdminDashboardPage() {
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3,872</div>
+            <div className="text-2xl font-bold">{stats?.totalEnrollments.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="flex items-center justify-center text-green-600">
-                <ArrowUpRight className="mr-1 h-4 w-4" />
-                18% from last month
+              <span className={`flex items-center justify-center ${(stats?.enrollmentGrowth ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {(stats?.enrollmentGrowth ?? 0) >= 0 ? <ArrowUpRight className="mr-1 h-4 w-4" /> : <ArrowDownRight className="mr-1 h-4 w-4" />}
+                {Math.abs(stats?.enrollmentGrowth ?? 0)}% from last month
               </span>
             </p>
           </CardContent>
@@ -108,11 +132,11 @@ export default function AdminDashboardPage() {
             <BarChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$24,389</div>
+            <div className="text-2xl font-bold">${stats?.revenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="flex items-center justify-center text-red-600">
-                <ArrowDownRight className="mr-1 h-4 w-4" />
-                3% from last month
+              <span className={`flex items-center justify-center ${(stats?.revenueGrowth ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {(stats?.revenueGrowth ?? 0) >= 0 ? <ArrowUpRight className="mr-1 h-4 w-4" /> : <ArrowDownRight className="mr-1 h-4 w-4" />}
+                {Math.abs(stats?.revenueGrowth ?? 0)}% from last month
               </span>
             </p>
           </CardContent>
@@ -136,7 +160,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>A list of recently registered students on your platform</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DataTable data={studentRowData} columns={studentColumns} pageSize={5} />
+                  <DataTable data={recentStudents} columns={studentColumns} pageSize={5} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -147,7 +171,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>Courses with the highest enrollment rates</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DataTable data={courseRowData} columns={courseColumns} pageSize={5} />
+                  <DataTable data={popularCourses} columns={courseColumns} pageSize={5} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -158,7 +182,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>A list of recent course enrollments</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DataTable data={enrollmentRowData} columns={enrollmentColumns} pageSize={5} />
+                  <DataTable data={recentEnrollments} columns={enrollmentColumns} pageSize={5} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -203,15 +227,21 @@ export default function AdminDashboardPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Server Status</span>
-                  <span className="text-sm font-medium text-green-600">Operational</span>
+                  <span className="text-sm font-medium text-green-600">
+                    {systemStatus?.serverStatus || 'Unknown'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Active Users</span>
-                  <span className="text-sm font-medium">127</span>
+                  <span className="text-sm font-medium">
+                    {systemStatus?.activeUsers || 0}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">System Load</span>
-                  <span className="text-sm font-medium">23%</span>
+                  <span className="text-sm font-medium">
+                    {systemStatus?.systemLoad || '0'}%
+                  </span>
                 </div>
               </div>
             </CardContent>
