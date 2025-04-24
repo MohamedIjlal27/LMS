@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { login as serverLogin, logout as serverLogout, getUser as serverGetUser } from '@/lib/auth'
+import Cookies from 'js-cookie'
 
 export function useAuth() {
   const [token, setToken] = useState<string | null>(null)
@@ -7,7 +8,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token')
+    const storedToken = Cookies.get('token')
     if (storedToken) {
       setToken(storedToken)
       fetchUserData(storedToken)
@@ -27,9 +28,18 @@ export function useAuth() {
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
+      } else {
+        // If the token is invalid, clear it
+        Cookies.remove('token')
+        setToken(null)
+        setUser(null)
       }
     } catch (error) {
       console.error('Error fetching user data:', error)
+      // If there's an error, clear the token
+      Cookies.remove('token')
+      setToken(null)
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -38,7 +48,12 @@ export function useAuth() {
   const login = async (email: string, password: string) => {
     const result = await serverLogin(email, password)
     if (result.success && result.token) {
-      localStorage.setItem('token', result.token)
+      Cookies.set('token', result.token, { 
+        expires: 1,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      })
       setToken(result.token)
       await fetchUserData(result.token)
     }
@@ -47,7 +62,7 @@ export function useAuth() {
 
   const logout = async () => {
     await serverLogout()
-    localStorage.removeItem('token')
+    Cookies.remove('token', { path: '/' })
     setToken(null)
     setUser(null)
   }
