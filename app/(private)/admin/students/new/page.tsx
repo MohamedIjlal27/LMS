@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle2 } from "lucide-react"
+import { studentsApi } from '@/lib/api/students'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -50,12 +51,7 @@ export default function NewStudentPage() {
     setIsSubmitting(true)
 
     try {
-      // In a real implementation, this would be an API call to create the student
-      console.log("Student values:", values)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
+      await studentsApi.create(values);
       setSubmitSuccess(true)
 
       // Redirect to students page after successful submission
@@ -64,6 +60,7 @@ export default function NewStudentPage() {
       }, 2000)
     } catch (error) {
       console.error("Error creating student:", error)
+      // You might want to show an error toast or message here
     } finally {
       setIsSubmitting(false)
     }
