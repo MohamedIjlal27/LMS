@@ -1,9 +1,35 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, Users, GraduationCap, BarChart, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { DataTable } from "@/components/ui/data-table"
+import { Student, Course, Enrollment, studentColumns, courseColumns, enrollmentColumns } from "@/components/ui/table-columns"
+
+// Row Data
+const studentRowData: Student[] = [
+  { id: 1, name: "John Doe", email: "john@example.com", date: "2 days ago" },
+  { id: 2, name: "Jane Smith", email: "jane@example.com", date: "3 days ago" },
+  { id: 3, name: "Robert Johnson", email: "robert@example.com", date: "1 week ago" },
+  { id: 4, name: "Emily Davis", email: "emily@example.com", date: "1 week ago" },
+  { id: 5, name: "Michael Wilson", email: "michael@example.com", date: "2 weeks ago" },
+]
+
+const courseRowData: Course[] = [
+  { id: 1, title: "Introduction to Web Development", category: "Development", students: 1245 },
+  { id: 2, title: "Advanced React Techniques", category: "Development", students: 873 },
+  { id: 3, title: "Data Science Fundamentals", category: "Data Science", students: 1032 },
+  { id: 4, title: "UX/UI Design Principles", category: "Design", students: 756 },
+  { id: 5, title: "Machine Learning for Beginners", category: "Data Science", students: 1189 },
+]
+
+const enrollmentRowData: Enrollment[] = [
+  { id: 1, student: "John Doe", course: "Web Development", date: "Today" },
+  { id: 2, student: "Jane Smith", course: "React Techniques", date: "Yesterday" },
+  { id: 3, student: "Robert Johnson", course: "UX Design", date: "2 days ago" },
+]
 
 export default function AdminDashboardPage() {
   return (
@@ -17,7 +43,7 @@ export default function AdminDashboardPage() {
           <Button asChild variant="outline">
             <Link href="/admin/courses">
               <BookOpen className="mr-2 h-4 w-4" />
-              Couse Management
+              Course Management
             </Link>
           </Button>
           <Button asChild>
@@ -110,36 +136,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>A list of recently registered students on your platform</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-center">Name</TableHead>
-                        <TableHead className="text-center">Email</TableHead>
-                        <TableHead className="text-center">Registered</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {[
-                        { id: 1, name: "John Doe", email: "john@example.com", date: "2 days ago" },
-                        { id: 2, name: "Jane Smith", email: "jane@example.com", date: "3 days ago" },
-                        { id: 3, name: "Robert Johnson", email: "robert@example.com", date: "1 week ago" },
-                        { id: 4, name: "Emily Davis", email: "emily@example.com", date: "1 week ago" },
-                        { id: 5, name: "Michael Wilson", email: "michael@example.com", date: "2 weeks ago" },
-                      ].map((student) => (
-                        <TableRow key={student.id}>
-                          <TableCell className="text-center font-medium">{student.name}</TableCell>
-                          <TableCell className="text-center">{student.email}</TableCell>
-                          <TableCell className="text-center">{student.date}</TableCell>
-                          <TableCell className="text-center">
-                            <Button asChild variant="ghost" size="sm">
-                              <Link href={`/admin/students/${student.id}`}>View</Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <DataTable data={studentRowData} columns={studentColumns} pageSize={5} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -150,36 +147,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>Courses with the highest enrollment rates</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-center">Course</TableHead>
-                        <TableHead className="text-center">Category</TableHead>
-                        <TableHead className="text-center">Students</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {[
-                        { id: 1, title: "Introduction to Web Development", category: "Development", students: 1245 },
-                        { id: 2, title: "Advanced React Techniques", category: "Development", students: 873 },
-                        { id: 3, title: "Data Science Fundamentals", category: "Data Science", students: 1032 },
-                        { id: 4, title: "UX/UI Design Principles", category: "Design", students: 756 },
-                        { id: 5, title: "Machine Learning for Beginners", category: "Data Science", students: 1189 },
-                      ].map((course) => (
-                        <TableRow key={course.id}>
-                          <TableCell className="text-center font-medium">{course.title}</TableCell>
-                          <TableCell className="text-center">{course.category}</TableCell>
-                          <TableCell className="text-center">{course.students}</TableCell>
-                          <TableCell className="text-center">
-                            <Button asChild variant="ghost" size="sm">
-                              <Link href={`/admin/courses/${course.id}`}>View</Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <DataTable data={courseRowData} columns={courseColumns} pageSize={5} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -190,49 +158,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>A list of recent course enrollments</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-center">Student</TableHead>
-                        <TableHead className="text-center">Course</TableHead>
-                        <TableHead className="text-center">Date</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {[
-                        {
-                          id: 1,
-                          student: "John Doe",
-                          course: "Web Development",
-                          date: "Today",
-                        },
-                        {
-                          id: 2,
-                          student: "Jane Smith",
-                          course: "React Techniques",
-                          date: "Yesterday",
-                        },
-                        {
-                          id: 3,
-                          student: "Robert Johnson",
-                          course: "UX Design",
-                          date: "2 days ago",
-                        },
-                      ].map((enrollment) => (
-                        <TableRow key={enrollment.id}>
-                          <TableCell className="text-center font-medium">{enrollment.student}</TableCell>
-                          <TableCell className="text-center">{enrollment.course}</TableCell>
-                          <TableCell className="text-center">{enrollment.date}</TableCell>
-                          <TableCell className="text-center">
-                            <Button asChild variant="ghost" size="sm">
-                              <Link href={`/admin/enrollments/${enrollment.id}`}>View</Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <DataTable data={enrollmentRowData} columns={enrollmentColumns} pageSize={5} />
                 </CardContent>
               </Card>
             </TabsContent>

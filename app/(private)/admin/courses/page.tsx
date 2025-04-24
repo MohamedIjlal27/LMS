@@ -4,16 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -22,24 +12,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, BookOpen } from "lucide-react"
+import { Plus, Search } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-
-interface Course {
-  _id: string
-  title: string
-  category: string
-  level: string
-  price: number
-  instructor: string
-  students: number
-  isPublished: boolean
-  imageUrl?: string
-}
+import { DataTable } from "@/components/ui/data-table"
+import { AdminCourse, adminCourseColumns } from "@/components/ui/table-columns"
 
 export default function AdminCoursesPage() {
   const { toast } = useToast()
-  const [courses, setCourses] = useState<Course[]>([])
+  const [courses, setCourses] = useState<AdminCourse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
@@ -173,97 +153,21 @@ export default function AdminCoursesPage() {
 
       {/* Courses Table */}
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">Title</TableHead>
-              <TableHead className="text-center">Category</TableHead>
-              <TableHead className="text-center">Level</TableHead>
-              <TableHead className="text-center">Price</TableHead>
-              <TableHead className="text-center">Instructor</TableHead>
-              <TableHead className="text-center">Students</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  Loading courses...
-                </TableCell>
-              </TableRow>
-            ) : filteredCourses.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  No courses found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredCourses.map((course) => (
-                <TableRow key={course._id}>
-                  <TableCell className="text-center font-medium">{course.title}</TableCell>
-                  <TableCell className="text-center">{course.category}</TableCell>
-                  <TableCell className="text-center">{course.level}</TableCell>
-                  <TableCell className="text-center">${course.price}</TableCell>
-                  <TableCell className="text-center">{course.instructor}</TableCell>
-                  <TableCell className="text-center">{course.students}</TableCell>
-                  <TableCell className="text-center">
-                    <span
-                      className={`inline-flex justify-center rounded-full px-2 py-1 text-xs font-medium ${
-                        course.isPublished
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {course.isPublished ? "Published" : "Draft"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/courses/${course._id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/courses/${course._id}/edit`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/courses/${course._id}/curriculum`}>
-                            <BookOpen className="mr-2 h-4 w-4" />
-                            Manage Curriculum
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDeleteClick(course._id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {isLoading ? (
+          <div className="h-24 flex items-center justify-center">
+            Loading courses...
+          </div>
+        ) : filteredCourses.length === 0 ? (
+          <div className="h-24 flex items-center justify-center">
+            No courses found.
+          </div>
+        ) : (
+          <DataTable
+            data={filteredCourses}
+            columns={adminCourseColumns(handleDeleteClick)}
+            pageSize={10}
+          />
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

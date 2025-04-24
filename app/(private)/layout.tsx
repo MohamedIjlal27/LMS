@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
 
 // This layout will be used for all private routes that require authentication
 export default function PrivateLayout({
@@ -23,7 +22,6 @@ export default function PrivateLayout({
     <div className="relative flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">{children}</main>
-      <SiteFooter />
     </div>
   )
 } 
