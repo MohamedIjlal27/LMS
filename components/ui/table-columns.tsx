@@ -27,10 +27,18 @@ export interface Course {
 }
 
 export interface Enrollment {
-  id: number
-  student: string
-  course: string
-  date: string
+  _id: string
+  student: {
+    _id: string
+    name: string
+  }
+  course: {
+    _id: string
+    title: string
+  }
+  createdAt: string
+  progress: number
+  status: string
 }
 
 export interface AdminCourse {
@@ -63,15 +71,6 @@ export const studentColumns: ColDef<Student>[] = [
     filter: true,
     flex: 2,
     minWidth: 200,
-    cellStyle: { fontSize: '14px', padding: '12px' }
-  },
-  { 
-    field: 'date', 
-    headerName: 'Registered', 
-    sortable: true, 
-    filter: true,
-    flex: 1.5,
-    minWidth: 150,
     cellStyle: { fontSize: '14px', padding: '12px' }
   },
   {
@@ -134,7 +133,7 @@ export const courseColumns: ColDef<Course>[] = [
 
 export const enrollmentColumns: ColDef<Enrollment>[] = [
   { 
-    field: 'student', 
+    field: 'student.name', 
     headerName: 'Student', 
     sortable: true, 
     filter: true,
@@ -143,7 +142,7 @@ export const enrollmentColumns: ColDef<Enrollment>[] = [
     cellStyle: { fontSize: '14px', padding: '12px' }
   },
   { 
-    field: 'course', 
+    field: 'course.title', 
     headerName: 'Course', 
     sortable: true, 
     filter: true,
@@ -152,19 +151,20 @@ export const enrollmentColumns: ColDef<Enrollment>[] = [
     cellStyle: { fontSize: '14px', padding: '12px' }
   },
   { 
-    field: 'date', 
+    field: 'createdAt', 
     headerName: 'Date', 
     sortable: true, 
     filter: true,
     flex: 1.5,
     minWidth: 150,
-    cellStyle: { fontSize: '14px', padding: '12px' }
+    cellStyle: { fontSize: '14px', padding: '12px' },
+    valueFormatter: (params: any) => new Date(params.value).toLocaleDateString()
   },
   {
     headerName: 'Actions',
     cellRenderer: (params: any) => (
       <Button asChild variant="ghost" size="sm" className="w-full">
-        <Link href={`/admin/enrollments/${params.data.id}`}>View</Link>
+        <Link href={`/admin/enrollments/${params.data._id}`}>View</Link>
       </Button>
     ),
     flex: 1,
