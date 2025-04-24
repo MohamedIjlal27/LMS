@@ -1,18 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -22,102 +13,140 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Eye, Mail } from "lucide-react"
-
-// Mock student data
-const initialStudents = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@example.com",
-    enrolledCourses: 3,
-    joinDate: "Jan 15, 2023",
-    lastActive: "2 days ago",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    enrolledCourses: 2,
-    joinDate: "Feb 20, 2023",
-    lastActive: "1 day ago",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Robert Johnson",
-    email: "robert.johnson@example.com",
-    enrolledCourses: 1,
-    joinDate: "Mar 10, 2023",
-    lastActive: "1 week ago",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    email: "emily.davis@example.com",
-    enrolledCourses: 4,
-    joinDate: "Apr 5, 2023",
-    lastActive: "3 days ago",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Michael Wilson",
-    email: "michael.wilson@example.com",
-    enrolledCourses: 2,
-    joinDate: "May 12, 2023",
-    lastActive: "5 days ago",
-    status: "Inactive",
-  },
-  {
-    id: 6,
-    name: "Sarah Brown",
-    email: "sarah.brown@example.com",
-    enrolledCourses: 1,
-    joinDate: "Jun 8, 2023",
-    lastActive: "2 weeks ago",
-    status: "Active",
-  },
-  {
-    id: 7,
-    name: "David Miller",
-    email: "david.miller@example.com",
-    enrolledCourses: 0,
-    joinDate: "Jul 22, 2023",
-    lastActive: "1 month ago",
-    status: "Inactive",
-  },
-]
+import { studentsApi, Student } from "@/lib/api/students"
+import { format } from "date-fns"
+import { toast } from "sonner"
+import { DataTable } from "@/components/ui/data-table"
+import { ColDef } from "ag-grid-community"
+import { ValueFormatterParams, ICellRendererParams } from 'ag-grid-community'
 
 export default function AdminStudentsPage() {
-  const [students, setStudents] = useState(initialStudents)
+  const [students, setStudents] = useState<Student[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [studentToDelete, setStudentToDelete] = useState<number | null>(null)
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Filter students based on search query and status filter
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || student.status === statusFilter
+  useEffect(() => {
+    fetchStudents()
+  }, [])
 
-    return matchesSearch && matchesStatus
-  })
+  const fetchStudents = async () => {
+    try {
+      const data = await studentsApi.getAll()
+      setStudents(data)
+    } catch (error) {
+      console.error("Error fetching students:", error)
+      toast.error("Failed to load students")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  const handleDeleteClick = (studentId: number) => {
+  const handleDeleteClick = (studentId: string) => {
     setStudentToDelete(studentId)
     setDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (studentToDelete) {
-      setStudents(students.filter((student) => student.id !== studentToDelete))
-      setDeleteDialogOpen(false)
-      setStudentToDelete(null)
+      try {
+        await studentsApi.remove(studentToDelete)
+        setStudents(students.filter((student) => student._id !== studentToDelete))
+        toast.success("Student deleted successfully")
+      } catch (error) {
+        console.error("Error deleting student:", error)
+        toast.error("Failed to delete student")
+      } finally {
+        setDeleteDialogOpen(false)
+        setStudentToDelete(null)
+      }
     }
+  }
+
+  const columns: ColDef<Student>[] = [
+    {
+      headerName: "Name",
+      field: "name",
+      filter: "agTextColumnFilter",
+      minWidth: 200,
+    },
+    {
+      headerName: "Email",
+      field: "email",
+      filter: "agTextColumnFilter",
+      minWidth: 250,
+    },
+    {
+      headerName: "Bio",
+      field: "bio",
+      filter: "agTextColumnFilter",
+      minWidth: 300,
+      valueFormatter: (params: ValueFormatterParams<Student, string>) => params.value || "-",
+    },
+    {
+      headerName: "Join Date",
+      field: "createdAt",
+      filter: "agDateColumnFilter",
+      minWidth: 150,
+      valueFormatter: (params: ValueFormatterParams<Student, string>) => 
+        params.value ? format(new Date(params.value), "MMM d, yyyy") : "-",
+    },
+    {
+      headerName: "Status",
+      field: "isActive",
+      filter: "agTextColumnFilter",
+      minWidth: 120,
+      cellRenderer: (params: ICellRendererParams<Student>) => (
+        <span
+          className={`inline-flex justify-center rounded-full px-2 py-1 text-xs font-medium ${
+            params.value ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {params.value ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+    {
+      headerName: "Actions",
+      field: "_id",
+      filter: false,
+      sortable: false,
+      minWidth: 150,
+      cellRenderer: (params: ICellRendererParams<Student>) => (
+        <div className="flex justify-center gap-2">
+          <Link href={`/admin/students/${params.value}`}>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Eye className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href={`/admin/students/${params.value}/edit`}>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-red-600"
+            onClick={() => handleDeleteClick(params.value as string)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ]
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-10">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Loading students...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -135,113 +164,12 @@ export default function AdminStudentsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <div className="relative md:col-span-2">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search students..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div>
-          <select
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Students Table */}
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">Name</TableHead>
-              <TableHead className="text-center">Email</TableHead>
-              <TableHead className="text-center">Enrolled Courses</TableHead>
-              <TableHead className="text-center">Join Date</TableHead>
-              <TableHead className="text-center">Last Active</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredStudents.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No students found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredStudents.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="text-center font-medium">{student.name}</TableCell>
-                  <TableCell className="text-center">{student.email}</TableCell>
-                  <TableCell className="text-center">{student.enrolledCourses}</TableCell>
-                  <TableCell className="text-center">{student.joinDate}</TableCell>
-                  <TableCell className="text-center">{student.lastActive}</TableCell>
-                  <TableCell className="text-center">
-                    <span
-                      className={`inline-flex justify-center rounded-full px-2 py-1 text-xs font-medium ${
-                        student.status === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {student.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/students/${student.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/students/${student.id}/edit`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`mailto:${student.email}`}>
-                            <Mail className="mr-2 h-4 w-4" />
-                            Send Email
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDeleteClick(student.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          data={students}
+          columns={columns}
+          pageSize={10}
+        />
       </div>
 
       {/* Delete Confirmation Dialog */}
